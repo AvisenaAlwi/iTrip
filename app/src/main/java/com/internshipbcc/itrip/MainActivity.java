@@ -17,6 +17,7 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        overridePendingTransition(android.R.anim.fade_in, 0);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -45,5 +46,20 @@ public class MainActivity extends FragmentActivity {
                         .setSearchQuery(text);
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        try {
+            FragmentHome home = (FragmentHome) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            if (!home.onBackPressed()) {
+                super.onBackPressed();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            super.onBackPressed();
+        }
+
     }
 }

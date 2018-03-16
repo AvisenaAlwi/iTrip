@@ -1,27 +1,77 @@
 package com.internshipbcc.itrip;
 
+import android.content.ActivityNotFoundException;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.v7.app.AppCompatActivity;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.view.LayoutInflaterCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.mikepenz.iconics.IconicsDrawable;
+import com.mikepenz.iconics.context.IconicsContextWrapper;
+import com.mikepenz.iconics.context.IconicsLayoutInflater2;
+import com.mikepenz.iconics.view.IconicsTextView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.FileInputStream;
 
+import cz.msebera.android.httpclient.Header;
+
 public class ViewDetails extends AppCompatActivity {
 
+    String idItem;
     ImageView imgAppBar;
+    RelativeLayout loading_dim_layout;
+    TextView tvTitle;
+    IconicsTextView tvLocation;
+    IconicsTextView tvAccess[] = new IconicsTextView[3];
+    private boolean dataIsLoaded = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        LayoutInflaterCompat.setFactory2(getLayoutInflater(), new IconicsLayoutInflater2(getDelegate()));
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_details);
         imgAppBar = findViewById(R.id.app_bar_image);
+
+        loading_dim_layout = findViewById(R.id.loading_dim_layout);
+        tvTitle = findViewById(R.id.tv_vd_title);
+        tvLocation = findViewById(R.id.tv_vd_location);
+        tvAccess[0] = findViewById(R.id.tv_vd_access_plane);
+        tvAccess[1] = findViewById(R.id.tv_vd_access_train);
+        tvAccess[2] = findViewById(R.id.tv_vd_access_bus);
+
         setSupportActionBar(findViewById(R.id.toolbar));
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
         if(getIntent()!=null){
+            idItem = getIntent().getStringExtra("id");
             Bitmap bmp = null;
             String filename = getIntent().getStringExtra("image");
             try {
@@ -32,9 +82,166 @@ public class ViewDetails extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            String title = getIntent().getStringExtra("title");
-            ((CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar)).setTitle(title);
         }
+
+
+        //Fetch data
+        DatabaseReference db = FirebaseDatabase.getInstance().getReference("/items/" + idItem);
+        db.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                dataIsLoaded = true;
+                String title = dataSnapshot.child("title").getValue(String.class);
+                String location = dataSnapshot.child("location").getValue(String.class);
+                tvTitle.setText(title);
+                tvLocation.setText("{gmd-place} " + location);
+                setAccess(title);
+                new Handler().postDelayed(() -> loading_dim_layout.setVisibility(View.GONE), 1000);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+                loading_dim_layout.findViewById(R.id.pg_loading).setVisibility(View.GONE);
+                loading_dim_layout.findViewById(R.id.error_message).setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (dataIsLoaded)
+            loading_dim_layout.setVisibility(View.GONE);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_view_detail, menu);
+        MenuItem addToWishList = menu.getItem(0);
+        addToWishList.setIcon(
+                new IconicsDrawable(this, "gmd-favorite-border")
+                        .color(Color.WHITE)
+                        .sizeDp(24));
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                break;
+            case R.id.menu_item_wishlist:
+                Toast.makeText(this, "Add to wishlist", Toast.LENGTH_LONG).show();
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(IconicsContextWrapper.wrap(newBase));
+    }
+
+    public void openInMaps(View v) {
+        String uri = "geo:0,0?q=" + tvTitle.getText().toString();
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(this, "Google Maps tidak terinstall.", Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+        }
+    }
+
+    private void setAccess(String destination) {
+        String linkBandara = "https://maps.googleapis.com/maps/api/directions/json?origin=Bandara%20Abdul%20Rachman%20Saleh&destination=" + destination + "&sensor=false";
+        String linkStasiun = "https://maps.googleapis.com/maps/api/directions/json?origin=stasiun%20kota%20baru%20malang&destination=" + destination + "&sensor=false";
+        String linkTerminal = "https://maps.googleapis.com/maps/api/directions/json?origin=terminal%20arjosari%20malang&destination=" + destination + "&sensor=false";
+
+        AsyncHttpClient http = new AsyncHttpClient();
+        http.get(linkBandara, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    JSONObject rute = response
+                            .getJSONArray("routes")
+                            .getJSONObject(0)
+                            .getJSONArray("legs")
+                            .getJSONObject(0);
+                    String waktu = rute.getJSONObject("duration").getString("text");
+                    waktu = waktu.replace("hours", "Jam");
+                    waktu = waktu.replace("mins", "Menit");
+                    String jarak = rute.getJSONObject("distance").getString("text");
+                    tvAccess[0].setText("{gmd-flight} Bandara Abdurrahman Saleh : " + waktu + " (" + jarak + ")");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                http.get(linkBandara, this);
+            }
+
+        });
+        http.get(linkStasiun, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    JSONObject rute = response
+                            .getJSONArray("routes")
+                            .getJSONObject(0)
+                            .getJSONArray("legs")
+                            .getJSONObject(0);
+                    String waktu = rute.getJSONObject("duration").getString("text");
+                    waktu = waktu.replace("hours", "Jam");
+                    waktu = waktu.replace("mins", "Menit");
+                    String jarak = rute.getJSONObject("distance").getString("text");
+                    tvAccess[1].setText("{gmd-train} Stasiun Malang Kota Baru : " + waktu + " (" + jarak + ")");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                http.get(linkStasiun, this);
+            }
+        });
+        http.get(linkTerminal, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    JSONObject rute = response
+                            .getJSONArray("routes")
+                            .getJSONObject(0)
+                            .getJSONArray("legs")
+                            .getJSONObject(0);
+                    String waktu = rute.getJSONObject("duration").getString("text");
+                    waktu = waktu.replace("hours", "Jam");
+                    waktu = waktu.replace("mins", "Menit");
+                    String jarak = rute.getJSONObject("distance").getString("text");
+                    tvAccess[2].setText("{gmd-directions-bus} Terminal Arjosari : " + waktu + " (" + jarak + ")");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                http.get(linkTerminal, this);
+            }
+
+        });
     }
 }

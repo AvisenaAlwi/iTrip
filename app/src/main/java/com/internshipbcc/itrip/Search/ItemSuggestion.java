@@ -25,7 +25,7 @@ public class ItemSuggestion implements SearchSuggestion {
     boolean isHistory = false;
 
     public ItemSuggestion(String suggestion) {
-        this.body = suggestion.toLowerCase();
+        this.body = suggestion;
     }
 
     public ItemSuggestion(Parcel source) {

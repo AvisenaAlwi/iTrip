@@ -11,16 +11,14 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
-import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.arlib.floatingsearchview.util.Util;
 import com.daimajia.slider.library.Animations.DescriptionAnimation;
@@ -33,6 +31,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.internshipbcc.itrip.Adapter.RvAdapterHome;
+import com.internshipbcc.itrip.Adapter.RvAdapterSearch;
 import com.internshipbcc.itrip.Search.DataHelper;
 import com.internshipbcc.itrip.Search.ItemSuggestion;
 import com.internshipbcc.itrip.Util.ItemHome;
@@ -46,13 +45,13 @@ import java.util.Locale;
  */
 
 public class FragmentHome extends Fragment {
-    public static final int FIND_SUGGESTION_SIMULATED_DELAY = 0;
+    public static final int FIND_SUGGESTION_SIMULATED_DELAY = 300;
     public static final int VOICE_SEARCH_CODE = 120;
     public String mLastQuery = "";
     private FloatingSearchView fsv;
     private SliderLayout sliderLayout;
-    private RecyclerView rvHome;
-    private RelativeLayout loadingDimLayout;
+    private RecyclerView rvHome, rvSearch;
+    private RelativeLayout loadingDimLayout, layoutSearch, loadingDimLayoutSearch;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -60,12 +59,16 @@ public class FragmentHome extends Fragment {
         fsv = rootView.findViewById(R.id.floating_search_view);
         sliderLayout = rootView.findViewById(R.id.slider);
         rvHome = rootView.findViewById(R.id.rv_home);
+        rvSearch = rootView.findViewById(R.id.rv_search);
 
         loadingDimLayout = rootView.findViewById(R.id.loading_dim_layout);
+        layoutSearch = rootView.findViewById(R.id.layout_search);
+        loadingDimLayoutSearch = rootView.findViewById(R.id.loading_dim_layout_search);
 
         setupFloatSearchView();
         setupSliderLayout();
         setupRvHome();
+        setupRvSearch();
         return rootView;
     }
 
@@ -74,42 +77,34 @@ public class FragmentHome extends Fragment {
             if (!oldQuery.equals("") && newQuery.equals("")) {
                 fsv.clearSuggestions();
             } else {
-                //this shows the top left circular progress
-                //you can call it where ever you want, but
-                //it makes sense to do it when loading something in
-                //the background.
                 fsv.showProgress();
-
-                //simulates a query call to a data source
-                //with a new query.
                 DataHelper.findSuggestions(getActivity(), newQuery, 5,
-                        FIND_SUGGESTION_SIMULATED_DELAY, new DataHelper.OnFindSuggestionsListener() {
-                            @Override
-                            public void onResults(List<ItemSuggestion> results) {
+                        FIND_SUGGESTION_SIMULATED_DELAY, results -> {
+                            if (fsv.hasFocus())
                                 fsv.swapSuggestions(results);
-                                fsv.hideProgress();
-                            }
+                            else fsv.clearSuggestions();
+                            fsv.hideProgress();
                         });
             }
         });
-
         fsv.setOnSearchListener(new FloatingSearchView.OnSearchListener() {
             @Override
             public void onSuggestionClicked(final SearchSuggestion searchSuggestion) {
-                ItemSuggestion colorSuggestion = (ItemSuggestion) searchSuggestion;
                 mLastQuery = searchSuggestion.getBody();
+                new DbHelper(getContext()).addToHistory(mLastQuery);
                 fsv.setSearchText(mLastQuery);
                 fsv.clearSearchFocus();
                 fsv.clearSuggestions();
+                performSearch();
             }
 
             @Override
             public void onSearchAction(String query) {
                 mLastQuery = query;
-
+                new DbHelper(getContext()).addToHistory(mLastQuery);
+                performSearch();
             }
         });
-
         fsv.setOnFocusChangeListener(new FloatingSearchView.OnFocusChangeListener() {
             @Override
             public void onFocus() {
@@ -125,28 +120,24 @@ public class FragmentHome extends Fragment {
 
         //handle menu clicks the same way as you would
         //in a regular activity
-        fsv.setOnMenuItemClickListener(new FloatingSearchView.OnMenuItemClickListener() {
-            @Override
-            public void onActionMenuItemSelected(MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.menu_item_voice_search:
-                        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-                        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                                "Katakan sesuatu...");
-                        try {
-                            getActivity().startActivityForResult(intent, VOICE_SEARCH_CODE);
-                        } catch (ActivityNotFoundException a) {
-                            Toast.makeText(getActivity(),
-                                    "Maaf, fitur pencarian via suara tidak didukung di perangkat Anda.",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                }
+        fsv.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case R.id.menu_item_voice_search:
+                    Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+                    intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                    intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                            "Katakan sesuatu...");
+                    try {
+                        getActivity().startActivityForResult(intent, VOICE_SEARCH_CODE);
+                    } catch (ActivityNotFoundException a) {
+                        Toast.makeText(getActivity(),
+                                "Maaf, fitur pencarian via suara tidak didukung di perangkat Anda.",
+                                Toast.LENGTH_SHORT).show();
+                    }
             }
         });
-
         /*
          * Here you have access to the left icon and the text of a given suggestion
          * item after as it is bound to the suggestion list. You can utilize this
@@ -158,33 +149,26 @@ public class FragmentHome extends Fragment {
          * Keep in mind that the suggestion list is a RecyclerView, so views are reused for different
          * items in the list.
          */
-        fsv.setOnBindSuggestionCallback(new SearchSuggestionsAdapter.OnBindSuggestionCallback() {
-            @Override
-            public void onBindSuggestion(View suggestionView, ImageView leftIcon,
-                                         TextView textView, SearchSuggestion item, int itemPosition) {
-                ItemSuggestion itemSuggestion = (ItemSuggestion) item;
-
-                String textColor = "#000000";
-                String textLight = "#787878";
-
-                if (itemSuggestion.isHistory()) {
-                    leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
-                            R.drawable.ic_history_black_24dp, null));
-
-                    Util.setIconColor(leftIcon, Color.parseColor(textColor));
-                    leftIcon.setAlpha(.36f);
-                } else {
-                    leftIcon.setAlpha(0.0f);
-                    leftIcon.setImageDrawable(null);
-                }
-
-                textView.setTextColor(Color.parseColor(textColor));
-                String text = itemSuggestion.getBody()
-                        .replaceFirst(fsv.getQuery(),
-                                "<font color=\"" + textLight + "\">" + fsv.getQuery() + "</font>");
-                textView.setText(Html.fromHtml(text));
+        fsv.setOnBindSuggestionCallback((suggestionView, leftIcon, textView, item, itemPosition) -> {
+            ItemSuggestion itemSuggestion = (ItemSuggestion) item;
+            String textColor = "#000000";
+            String textLight = "#787878";
+            if (itemSuggestion.isHistory() || new DbHelper(getContext()).getHistoryTitle()
+                    .contains(itemSuggestion.getBody())) {
+                leftIcon.setImageDrawable(ResourcesCompat.getDrawable(getResources(),
+                        R.drawable.ic_history_black_24dp, null));
+                Util.setIconColor(leftIcon, Color.parseColor(textColor));
+                leftIcon.setAlpha(.36f);
+            } else {
+                leftIcon.setAlpha(0.0f);
+                leftIcon.setImageDrawable(null);
             }
 
+            textView.setTextColor(Color.parseColor(textLight));
+            String text = itemSuggestion.getBody()
+                    .replaceFirst(fsv.getQuery(),
+                            "<font color=\"" + textColor + "\">" + fsv.getQuery() + "</font>");
+            textView.setText(Html.fromHtml(text));
         });
     }
 
@@ -216,7 +200,7 @@ public class FragmentHome extends Fragment {
         sliderLayout.setPresetTransformer(SliderLayout.Transformer.Default);
         sliderLayout.setPresetIndicator(SliderLayout.PresetIndicators.Center_Bottom);
         sliderLayout.setCustomAnimation(new DescriptionAnimation());
-        sliderLayout.setDuration(4000);
+        sliderLayout.setDuration(8000);
         sliderLayout.startAutoCycle();
     }
 
@@ -240,7 +224,23 @@ public class FragmentHome extends Fragment {
                 rvHome.setLayoutManager(new LinearLayoutManager(getActivity()));
                 rvHome.setAdapter(adapterHome);
 
-                loadingDimLayout.setVisibility(View.GONE);
+                Animation fadeOut = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_out);
+                fadeOut.setDuration(600);
+                fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        loadingDimLayout.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+                });
+                loadingDimLayout.setAnimation(fadeOut);
             }
 
             @Override
@@ -248,6 +248,10 @@ public class FragmentHome extends Fragment {
 
             }
         });
+    }
+
+    private void setupRvSearch() {
+        rvSearch.setLayoutManager(new LinearLayoutManager(getActivity()));
     }
 
     @Override
@@ -258,5 +262,60 @@ public class FragmentHome extends Fragment {
 
     public void setSearchQuery(String teks) {
         fsv.setSearchText(teks);
+    }
+
+    protected void performSearch() {
+        loadingDimLayoutSearch.setVisibility(View.VISIBLE);
+        DatabaseReference db = FirebaseDatabase.getInstance().getReference("/items");
+        db.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                List<ItemHome> data = new ArrayList<>();
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    String title = item.child("title").getValue(String.class);
+                    String location = item.child("location").getValue(String.class);
+                    if (title != null && title.toLowerCase().contains(mLastQuery.toLowerCase()) ||
+                            location != null && location.toLowerCase().contains(mLastQuery.toLowerCase())) {
+                        //Jika item yang dicari ditemukan
+                        String desc = item.child("desc").getValue(String.class);
+                        String image = item.child("images").getValue(String.class).split(",")[0];
+                        boolean isWisata = item.child("images").getValue(String.class).equalsIgnoreCase("0");
+                        ItemHome itemCari = new ItemHome(item.getKey(), title, desc, image, isWisata);
+                        data.add(itemCari);
+                    }
+                }
+                if (data.size() != 0) {
+                    rvSearch.setVisibility(View.VISIBLE);
+                    rvSearch.setAdapter(new RvAdapterSearch(getActivity(), data));
+                } else {
+                    rvSearch.setVisibility(View.GONE);
+                    rvSearch.setAdapter(null);
+                }
+                try {
+                    Thread.sleep(400);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                layoutSearch.setVisibility(View.VISIBLE);
+                loadingDimLayoutSearch.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    public boolean onBackPressed() {
+        if (layoutSearch.getVisibility() == View.VISIBLE) {
+            rvSearch.setAdapter(null);
+            layoutSearch.setVisibility(View.GONE);
+            fsv.clearQuery();
+            fsv.clearSearchFocus();
+            return true;
+        }
+        return false;
     }
 }

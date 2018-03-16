@@ -4,17 +4,16 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.util.Pair;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RelativeLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -25,43 +24,43 @@ import com.bumptech.glide.request.target.Target;
 import com.internshipbcc.itrip.R;
 import com.internshipbcc.itrip.Util.ItemHome;
 import com.internshipbcc.itrip.ViewDetails;
-import com.joooonho.SelectableRoundedImageView;
 
 import java.io.FileOutputStream;
 import java.util.List;
 
 /**
- * Created by Sena on 12/03/2018.
+ * Created by Sena on 16/03/2018.
  */
 
-public class RvAdapterHome extends RecyclerView.Adapter<RvAdapterHome.ViewHolder> {
+public class RvAdapterSearch extends RecyclerView.Adapter<RvAdapterSearch.ViewHolder> {
 
     Context context;
     List<ItemHome> data;
 
-    public RvAdapterHome(Context context, List<ItemHome> data) {
+    public RvAdapterSearch(Context context, List<ItemHome> data) {
         this.context = context;
         this.data = data;
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View root = LayoutInflater.from(context).inflate(R.layout.rv_item_home, parent, false);
-        return new ViewHolder(root);
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View rootView = LayoutInflater.from(context).inflate(R.layout.rv_item_home_search, parent, false);
+        return new ViewHolder(rootView);
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final Bitmap[] bmp = new Bitmap[1];
         Glide.with(context)
                 .asBitmap()
                 .load(data.get(position).image)
-                .thumbnail(0.3f)
                 .listener(new RequestListener<Bitmap>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
                         return false;
                     }
+
                     @Override
                     public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
                         bmp[0] = resource;
@@ -69,23 +68,13 @@ public class RvAdapterHome extends RecyclerView.Adapter<RvAdapterHome.ViewHolder
                     }
                 })
                 .into(holder.image);
-        int endIndex = data.get(position).des.length() > 101 ? 100 : data.get(position).des.length() - 1;
-        String shortDes = data.get(position).des.substring(0, endIndex) + "... <b>Selengkapnya</b>";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-            holder.tvDes.setText(Html.fromHtml(shortDes, Html.FROM_HTML_MODE_COMPACT));
-        else holder.tvDes.setText(Html.fromHtml(shortDes));
         holder.tvTitle.setText(data.get(position).title);
+        String desc = data.get(position).des;
+        desc = desc.substring(0, desc.length() > 50 ? 49 : desc.length()).concat(" ... ")
+                .concat("<b>Selengkapnya</b>");
+        holder.tvDesc.setText(Html.fromHtml(desc));
 
-        if (data.get(position).isWisata) {
-            holder.tvBadge.setText("Wisata");
-            holder.cvBadge.setCardBackgroundColor(context.getResources().getColor(R.color.colorPrimary));
-        } else {
-            holder.tvBadge.setText("Event");
-            holder.cvBadge.setCardBackgroundColor(context.getResources().getColor(R.color.merah));
-        }
-
-        //Item clicked
-        holder.root.setOnClickListener(v -> {
+        holder.itemView.setOnClickListener(v -> {
             //make file
             String filename = "bitmap.png";
             try {
@@ -116,19 +105,15 @@ public class RvAdapterHome extends RecyclerView.Adapter<RvAdapterHome.ViewHolder
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        RelativeLayout root;
-        SelectableRoundedImageView image;
-        TextView tvTitle, tvDes, tvBadge;
-        CardView cvBadge;
+
+        ImageView image;
+        TextView tvTitle, tvDesc;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            root = itemView.findViewById(R.id.root);
-            image = itemView.findViewById(R.id.img_rv_item_home);
-            tvTitle = itemView.findViewById(R.id.tv_rv_item_home_title);
-            tvDes = itemView.findViewById(R.id.tv_rv_item_home_des);
-            cvBadge = itemView.findViewById(R.id.cv_item_rv_home_badge);
-            tvBadge = itemView.findViewById(R.id.tv_item_rv_home_badge);
+            image = itemView.findViewById(R.id.img_item_search);
+            tvTitle = itemView.findViewById(R.id.tv_item_search_title);
+            tvDesc = itemView.findViewById(R.id.tv_item_search_desc);
         }
     }
 }

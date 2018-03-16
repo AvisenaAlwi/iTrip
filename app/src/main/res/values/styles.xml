@@ -11,7 +11,7 @@
     </style>
 
     <style name="AppTheme.SplashScreen">
-        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:windowBackground">@drawable/background_splachscreen</item>
     </style>
 
 </resources>

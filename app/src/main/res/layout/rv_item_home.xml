@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:clickable="true">
 
     <android.support.v7.widget.CardView
         android:layout_width="match_parent"
@@ -12,7 +13,6 @@
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="2dp"
-        android:background="?attr/selectableItemBackground"
         app:cardCornerRadius="4dp"
         app:cardPreventCornerOverlap="false"
         app:cardUseCompatPadding="true">
@@ -20,6 +20,7 @@
         <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
             android:paddingBottom="20dp">
 
             <com.joooonho.SelectableRoundedImageView
@@ -27,7 +28,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="250dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/ic_launcher_background"
                 android:transitionName="image"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

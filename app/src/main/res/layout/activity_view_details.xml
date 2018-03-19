@@ -15,6 +15,7 @@
             android:id="@+id/collapsing_toolbar"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="?android:attr/windowBackground"
             android:fitsSystemWindows="true"
             app:contentScrim="?attr/colorPrimary"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
@@ -38,6 +39,7 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/gradient_dark"
                 app:layout_collapseMode="pin" />
+
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
@@ -68,7 +70,7 @@
                     android:id="@+id/header_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#ddd"
+                    android:background="#f3f3f3"
                     android:paddingBottom="8dp">
 
                     <ImageView
@@ -157,8 +159,31 @@
                         app:layout_constraintTop_toBottomOf="@+id/tv_vd_access_train" />
                 </android.support.constraint.ConstraintLayout>
 
-            </LinearLayout>
+                <com.borjabravo.readmoretextview.ReadMoreTextView
+                    android:id="@+id/rmtv_desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:text="Deskripsi"
+                    app:colorClickableText="#222"
+                    app:trimCollapsedText="Sembunyikan"
+                    app:trimExpandedText="Selengkapnya"
+                    app:trimLines="10"
+                    app:trimMode="trimModeLine" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:text="Tempat &amp; Wisata menarik"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/rv_spots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
 
             <RelativeLayout
                 android:id="@+id/loading_dim_layout"
@@ -166,7 +191,7 @@
                 android:layout_height="match_parent"
                 android:layout_centerInParent="true"
                 android:background="#fff"
-                android:visibility="visible">
+                android:visibility="gone">
 
                 <ProgressBar
                     android:id="@+id/pg_loading"

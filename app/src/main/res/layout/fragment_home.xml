@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="false">
-
     <android.support.v4.widget.NestedScrollView
         android:id="@+id/home_layout"
         android:layout_width="match_parent"
@@ -19,7 +18,7 @@
             <com.daimajia.slider.library.SliderLayout
                 android:id="@+id/slider"
                 android:layout_width="match_parent"
-                android:layout_height="300dp" />
+                android:layout_height="355dp" />
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rv_home"
@@ -30,7 +29,6 @@
 
         </LinearLayout>
     </android.support.v4.widget.NestedScrollView>
-
     <RelativeLayout
         android:id="@+id/layout_search"
         android:layout_width="match_parent"
@@ -56,7 +54,6 @@
             android:overScrollMode="never"
             android:paddingTop="90dp" />
     </RelativeLayout>
-
     <RelativeLayout
         android:id="@+id/loading_dim_layout_search"
         android:layout_width="match_parent"
@@ -75,7 +72,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:paddingTop="24dp">
 
         <ImageView
             android:layout_width="match_parent"
@@ -86,7 +83,6 @@
             android:id="@+id/floating_search_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fitsSystemWindows="true"
             app:floatingSearch_close_search_on_keyboard_dismiss="true"
             app:floatingSearch_leftActionMode="showSearch"
             app:floatingSearch_menu="@menu/menu_home"

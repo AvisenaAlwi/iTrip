@@ -11,6 +11,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.LayoutInflaterCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SnapHelper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,11 +23,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.borjabravo.readmoretextview.ReadMoreTextView;
+import com.bumptech.glide.Glide;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.internshipbcc.itrip.Adapter.RvAdapterSpots;
+import com.internshipbcc.itrip.Util.GravitySnapHelper;
+import com.internshipbcc.itrip.Util.Spot;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.mikepenz.iconics.IconicsDrawable;
@@ -36,6 +44,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -47,6 +57,8 @@ public class ViewDetails extends AppCompatActivity {
     TextView tvTitle;
     IconicsTextView tvLocation;
     IconicsTextView tvAccess[] = new IconicsTextView[3];
+    ReadMoreTextView rmtvDesc;
+    RecyclerView rvSpots;
     private boolean dataIsLoaded = false;
 
     @Override
@@ -63,6 +75,12 @@ public class ViewDetails extends AppCompatActivity {
         tvAccess[0] = findViewById(R.id.tv_vd_access_plane);
         tvAccess[1] = findViewById(R.id.tv_vd_access_train);
         tvAccess[2] = findViewById(R.id.tv_vd_access_bus);
+        rmtvDesc = findViewById(R.id.rmtv_desc);
+
+        rvSpots = findViewById(R.id.rv_spots);
+        rvSpots.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        SnapHelper sh = new GravitySnapHelper();
+        sh.attachToRecyclerView(rvSpots);
 
         setSupportActionBar(findViewById(R.id.toolbar));
         if (getSupportActionBar() != null) {
@@ -84,7 +102,6 @@ public class ViewDetails extends AppCompatActivity {
             }
         }
 
-
         //Fetch data
         DatabaseReference db = FirebaseDatabase.getInstance().getReference("/items/" + idItem);
         db.addValueEventListener(new ValueEventListener() {
@@ -93,9 +110,31 @@ public class ViewDetails extends AppCompatActivity {
                 dataIsLoaded = true;
                 String title = dataSnapshot.child("title").getValue(String.class);
                 String location = dataSnapshot.child("location").getValue(String.class);
+                String desc = dataSnapshot.child("desc").getValue(String.class);
                 tvTitle.setText(title);
                 tvLocation.setText("{gmd-place} " + location);
                 setAccess(title);
+                rmtvDesc.setText(desc, TextView.BufferType.SPANNABLE);
+//                rmtvDesc.setTrimCollapsedText("Selengkapnya");
+//                rmtvDesc.setTrimExpandedText("Sembunyikan");
+//                rmtvDesc.setTrimLines(10);
+                rmtvDesc.setTrimLength(100);
+                rmtvDesc.setTrimMode(0);
+
+                DataSnapshot spots = dataSnapshot.child("spots");
+                List<Spot> dataSpots = new ArrayList<>();
+                if (spots.exists()) {
+                    for (DataSnapshot spot : spots.getChildren()) {
+                        String[] dt = spot.getValue(String.class).split(",");
+                        String titleSpot = dt[0];
+                        String imageSpot = dt[1];
+                        String htmSpot = "Rp." + dt[2];
+                        dataSpots.add(new Spot(titleSpot, imageSpot, htmSpot));
+                    }
+                }
+                if (!dataSpots.isEmpty()) {
+                    rvSpots.setAdapter(new RvAdapterSpots(ViewDetails.this, dataSpots));
+                }
                 new Handler().postDelayed(() -> loading_dim_layout.setVisibility(View.GONE), 1000);
             }
 
@@ -106,6 +145,11 @@ public class ViewDetails extends AppCompatActivity {
                 loading_dim_layout.findViewById(R.id.error_message).setVisibility(View.VISIBLE);
             }
         });
+
+        new Handler().postDelayed(() -> Glide.with(ViewDetails.this)
+                .load(getIntent().getStringExtra("imageLink"))
+                .thumbnail(.8f)
+                .into(imgAppBar), 1000);
     }
 
     @Override
@@ -161,11 +205,13 @@ public class ViewDetails extends AppCompatActivity {
     }
 
     private void setAccess(String destination) {
-        String linkBandara = "https://maps.googleapis.com/maps/api/directions/json?origin=Bandara%20Abdul%20Rachman%20Saleh&destination=" + destination + "&sensor=false";
-        String linkStasiun = "https://maps.googleapis.com/maps/api/directions/json?origin=stasiun%20kota%20baru%20malang&destination=" + destination + "&sensor=false";
-        String linkTerminal = "https://maps.googleapis.com/maps/api/directions/json?origin=terminal%20arjosari%20malang&destination=" + destination + "&sensor=false";
+        String key = "AIzaSyC1PkLZ1n3rm9OHcrHSZBpq9qj8_ZcznZE";
+        String linkBandara = "https://maps.googleapis.com/maps/api/directions/json?origin=Bandara%20Abdul%20Rachman%20Saleh&destination=" + destination + "&key=" + key;
+        String linkStasiun = "https://maps.googleapis.com/maps/api/directions/json?origin=stasiun%20kota%20baru%20malang&destination=" + destination + "&key=" + key;
+        String linkTerminal = "https://maps.googleapis.com/maps/api/directions/json?origin=terminal%20arjosari%20malang&destination=" + destination + "&key=" + key;
 
         AsyncHttpClient http = new AsyncHttpClient();
+        http.setConnectTimeout(1000);
         http.get(linkBandara, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {

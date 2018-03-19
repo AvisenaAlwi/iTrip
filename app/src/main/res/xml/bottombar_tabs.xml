@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <tabs>
     <tab
-        id="@+id/tab_home"
         icon="@drawable/ic_home_black_24dp"
+        id="@+id/tab_home"
         title="Home" />
     <tab
-        id="@+id/tab_dashboard"
+        icon="@drawable/ic_near_me_black_24dp"
+        id="@+id/tab_nearby"
+        title="Nearby Me" />
+    <tab
         icon="@drawable/ic_dashboard_black_24dp"
+        id="@+id/tab_dashboard"
         title="Dashboard" />
     <tab
-        id="@+id/tab_account"
         icon="@drawable/ic_person_black_24dp"
+        id="@+id/tab_account"
         title="Account" />
 </tabs>

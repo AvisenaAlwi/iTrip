@@ -106,6 +106,7 @@ public class RvAdapterHome extends RecyclerView.Adapter<RvAdapterHome.ViewHolder
             intent.putExtra("id", data.get(position).id);
             intent.putExtra("image", filename);
             intent.putExtra("title", holder.tvTitle.getText());
+            intent.putExtra("imageLink", data.get(position).image);
             context.startActivity(intent, options.toBundle());
         });
     }

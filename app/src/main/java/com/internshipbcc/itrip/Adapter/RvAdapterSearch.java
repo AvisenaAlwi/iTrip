@@ -70,7 +70,7 @@ public class RvAdapterSearch extends RecyclerView.Adapter<RvAdapterSearch.ViewHo
                 .into(holder.image);
         holder.tvTitle.setText(data.get(position).title);
         String desc = data.get(position).des;
-        desc = desc.substring(0, desc.length() > 50 ? 49 : desc.length()).concat(" ... ")
+        desc = desc.substring(0, desc.length() > 70 ? 69 : desc.length()).concat(" ... ")
                 .concat("<b>Selengkapnya</b>");
         holder.tvDesc.setText(Html.fromHtml(desc));
 
@@ -95,6 +95,7 @@ public class RvAdapterSearch extends RecyclerView.Adapter<RvAdapterSearch.ViewHo
             intent.putExtra("id", data.get(position).id);
             intent.putExtra("image", filename);
             intent.putExtra("title", holder.tvTitle.getText());
+            intent.putExtra("imageLink", data.get(position).image);
             context.startActivity(intent, options.toBundle());
         });
     }

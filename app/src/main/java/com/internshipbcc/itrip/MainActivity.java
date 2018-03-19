@@ -14,10 +14,13 @@ public class MainActivity extends FragmentActivity {
 
     BottomBar bottomBar;
     FragmentHome fHome = new FragmentHome();
+    FragmentNearby fNearby = new FragmentNearby();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         overridePendingTransition(android.R.anim.fade_in, 0);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -25,9 +28,15 @@ public class MainActivity extends FragmentActivity {
         bottomBar.setOnTabSelectListener(tabId -> {
             switch (tabId) {
                 case R.id.tab_home:
-                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, fHome, "home")
+                            .commit();
+                    break;
+                case R.id.tab_nearby:
+//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, fNearby, "nearby")
                             .commit();
                     break;
             }

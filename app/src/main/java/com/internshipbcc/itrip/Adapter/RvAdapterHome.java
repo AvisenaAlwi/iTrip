@@ -62,6 +62,7 @@ public class RvAdapterHome extends RecyclerView.Adapter<RvAdapterHome.ViewHolder
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
                         return false;
                     }
+
                     @Override
                     public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
                         bmp[0] = resource;

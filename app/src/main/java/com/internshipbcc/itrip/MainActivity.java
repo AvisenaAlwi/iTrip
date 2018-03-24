@@ -13,8 +13,8 @@ import java.util.ArrayList;
 public class MainActivity extends FragmentActivity {
 
     BottomBar bottomBar;
-    FragmentHome fHome = new FragmentHome();
-    FragmentNearby fNearby = new FragmentNearby();
+//    FragmentHome fHome = new FragmentHome();
+//    FragmentNearby fNearby = new FragmentNearby();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,15 +28,21 @@ public class MainActivity extends FragmentActivity {
         bottomBar.setOnTabSelectListener(tabId -> {
             switch (tabId) {
                 case R.id.tab_home:
-//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, fHome, "home")
+                            .replace(R.id.fragment_container, new FragmentHome(), "home")
                             .commit();
                     break;
                 case R.id.tab_nearby:
-//                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                    getWindow().setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, fNearby, "nearby")
+                            .replace(R.id.fragment_container, new FragmentNearby(), "nearby")
+                            .commit();
+                    break;
+                case R.id.tab_account:
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new FragmentAccount(), "account")
                             .commit();
                     break;
             }

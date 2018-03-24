@@ -37,6 +37,7 @@ import com.internshipbcc.itrip.Search.ItemSuggestion;
 import com.internshipbcc.itrip.Util.ItemHome;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -205,6 +206,7 @@ public class FragmentHome extends Fragment {
     }
 
     private void setupRvHome() {
+
         FirebaseDatabase db = FirebaseDatabase.getInstance();
         DatabaseReference dbRef = db.getReference("/home");
         List<ItemHome> dataHome = new ArrayList<>();
@@ -219,28 +221,32 @@ public class FragmentHome extends Fragment {
                     boolean isWisata = homeItem.child("type").getValue(Long.class) == 0;
                     dataHome.add(new ItemHome(id, title, des, image, isWisata));
                 }
-
+                Collections.reverse(dataHome);
                 RvAdapterHome adapterHome = new RvAdapterHome(getActivity(), dataHome);
                 rvHome.setLayoutManager(new LinearLayoutManager(getActivity()));
                 rvHome.setAdapter(adapterHome);
 
-                Animation fadeOut = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_out);
-                fadeOut.setDuration(600);
-                fadeOut.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                    }
+                try {
+                    Animation fadeOut = AnimationUtils.loadAnimation(getActivity(), android.R.anim.fade_out);
+                    fadeOut.setDuration(600);
+                    fadeOut.setAnimationListener(new Animation.AnimationListener() {
+                        @Override
+                        public void onAnimationStart(Animation animation) {
+                        }
 
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        loadingDimLayout.setVisibility(View.GONE);
-                    }
+                        @Override
+                        public void onAnimationEnd(Animation animation) {
+                            loadingDimLayout.setVisibility(View.GONE);
+                        }
 
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-                    }
-                });
-                loadingDimLayout.setAnimation(fadeOut);
+                        @Override
+                        public void onAnimationRepeat(Animation animation) {
+                        }
+                    });
+                    loadingDimLayout.setAnimation(fadeOut);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -318,4 +324,5 @@ public class FragmentHome extends Fragment {
         }
         return false;
     }
+
 }

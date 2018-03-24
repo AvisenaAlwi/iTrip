@@ -27,6 +27,7 @@ public class CustomWindowInfoAdapter implements GoogleMap.InfoWindowAdapter {
     private void reDrawInfo(Marker marker, View mview) {
         TextView title = mview.findViewById(R.id.txtJudul);
         title.setText(marker.getTitle());
+
     }
 
     @Override

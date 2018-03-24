@@ -9,10 +9,6 @@
         id="@+id/tab_nearby"
         title="Nearby Me" />
     <tab
-        icon="@drawable/ic_dashboard_black_24dp"
-        id="@+id/tab_dashboard"
-        title="Dashboard" />
-    <tab
         icon="@drawable/ic_person_black_24dp"
         id="@+id/tab_account"
         title="Account" />

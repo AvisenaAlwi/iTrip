@@ -93,10 +93,9 @@ public class FragmentHome extends Fragment {
             public void onSuggestionClicked(final SearchSuggestion searchSuggestion) {
                 mLastQuery = searchSuggestion.getBody();
                 new DbHelper(getContext()).addToHistory(mLastQuery);
-                fsv.setSearchBarTitle(mLastQuery);
+                setSearchQuery(mLastQuery);
                 fsv.clearSearchFocus();
                 fsv.clearSuggestions();
-                performSearch();
             }
 
             @Override
@@ -268,6 +267,7 @@ public class FragmentHome extends Fragment {
 
     public void setSearchQuery(String teks) {
         fsv.setSearchText(teks);
+        performSearch();
     }
 
     protected void performSearch() {
